@@ -12,7 +12,7 @@ services:
       - static_volume:/Shop/staticfiles
       - media_volume:/Shop/mediafiles
     ports:
-      - "8001:8000"
+      - "8024:8000"
     depends_on:
       - shop_db
 #      - redis
