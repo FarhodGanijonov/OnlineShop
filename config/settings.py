@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-uksa)v1k+6*%b+4&hj3stdqc)ere&q#33d36t$t!x341k(q=7n
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["olx.digitallaboratory.uz", "127.0.0.1", "localhost"]
 
 
 # Application definition
