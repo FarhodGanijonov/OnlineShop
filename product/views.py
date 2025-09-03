@@ -42,13 +42,13 @@ def product_list_create(request):
     elif request.method == "POST":
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)  # ✅ mahsulot egasi avtomatik yoziladi
+            serializer.save(user=request.user)  #  user avtomatik yoziladi
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])  # ✅ faqat owner o‘z productini update/delete qila oladi
+@permission_classes([IsAuthenticated])  # faqat owner o‘z productini update/delete qila oladi
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
