@@ -20,3 +20,8 @@ class ProductSerializer(serializers.ModelSerializer):
         model = Product
         fields = ["id", "title", "description", "price", "image", "location",
                   "created_at", "updated_at", "is_active", "category", "category_id"]
+        read_only_fields = ["user"]
+
+    def create(self, validated_data):
+        validated_data["user"] = self.context["request"].user
+        return super().create(validated_data)
