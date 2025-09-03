@@ -15,7 +15,7 @@ services:
       - "8021:8000"
     depends_on:
       - shop_db
-      - redis
+#      - redis
     restart: always
 
   shop_db:
