@@ -1,5 +1,5 @@
 from django.db import models
-from rest_framework import settings
+from django.conf import settings
 
 
 class Category(models.Model):
