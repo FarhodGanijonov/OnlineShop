@@ -1,67 +1,79 @@
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
+from django.contrib.auth import get_user_model
+from .models import EmailVerification
+from rest_framework import serializers
+from django.contrib.auth import authenticate
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
 
-class UserRegistrationSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
-    password_confirmation = serializers.CharField(write_only=True)
-
+class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'full_name', 'phone', 'password', 'password_confirmation']
-
-    def validate(self, data):
-        if data['password'] != data['password_confirmation']:
-            raise serializers.ValidationError("Parollar bir xil emas.")
-        return data
+        fields = ["email", "full_name", "password"]
+        extra_kwargs = {
+            "password": {"write_only": True}
+        }
 
     def create(self, validated_data):
-        validated_data.pop('password_confirmation')
-        user = User(
-            full_name=validated_data['full_name'],
-            phone=validated_data['phone'],
-        )
-        user.set_password(validated_data['password'])
-        user.save()
+        password = validated_data.pop("password")
+        user = User.objects.create_user(**validated_data, password=password)
+        # Email verification code yaratamiz
+        code = EmailVerification.generate_code()
+        EmailVerification.objects.create(user=user, code=code)
+        # Email orqali kod yuborish (keyin views.py ichida qilamiz)
         return user
 
 
-class UserLoginSerializer(serializers.Serializer):
-    phone = serializers.CharField()
+class VerifyEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    code = serializers.CharField(max_length=6)
+
+    def validate(self, attrs):
+        email = attrs.get("email")
+        code = attrs.get("code")
+
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise serializers.ValidationError("Bunday foydalanuvchi yo‘q")
+
+        try:
+            verification = EmailVerification.objects.filter(user=user, code=code).latest("created_at")
+        except EmailVerification.DoesNotExist:
+            raise serializers.ValidationError("Kod noto‘g‘ri")
+
+        if verification.is_expired():
+            raise serializers.ValidationError("Kod muddati tugagan")
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.is_active = True
+        user.save()
+        EmailVerification.objects.filter(user=user).delete()
+        return user
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
 
-    def validate(self, data):
-        phone = data.get('phone')
-        password = data.get('password')
-        user = User.objects.filter(phone=phone).first()
+    def validate(self, attrs):
+        email = attrs.get("email")
+        password = attrs.get("password")
 
-        if user and user.check_password(password):
+        if email and password:
+            user = authenticate(request=self.context.get("request"), email=email, password=password)
+            if not user:
+                raise serializers.ValidationError(_("Email yoki parol noto‘g‘ri."), code="authorization")
             if not user.is_active:
-                raise serializers.ValidationError("Foydalanuvchi faol emas.")
-            return user
-        raise serializers.ValidationError("Noto‘g‘ri telefon raqam yoki parol.")
+                raise serializers.ValidationError(_("Hisobingiz hali aktiv emas."), code="authorization")
+        else:
+            raise serializers.ValidationError(_("Email va parol kiritish majburiy."), code="authorization")
 
-
-class UserPasswordChangeSerializer(serializers.Serializer):
-    old_password = serializers.CharField(write_only=True)
-    new_password = serializers.CharField(write_only=True)
-    confirm_new_password = serializers.CharField(write_only=True)
-
-    def validate_old_password(self, value):
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError("Eski parol noto‘g‘ri.")
-        return value
-
-    def validate(self, data):
-        if data['new_password'] != data['confirm_new_password']:
-            raise serializers.ValidationError("Yangi parollar bir xil emas.")
-        return data
-
-    def save(self, **kwargs):
-        user = self.context['request'].user
-        user.set_password(self.validated_data['new_password'])
-        user.save()
-        return user
+        attrs["user"] = user
+        return attrs

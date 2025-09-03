@@ -1,48 +1,51 @@
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.models import PermissionsMixin
 from django.db import models
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+import random
+from datetime import timedelta
+from django.utils import timezone
 
 
 class UserManager(BaseUserManager):
-    use_in_migrations = True
-
-    def create_user(self, phone, full_name, password=None, **extra_fields):
-        if not phone:
-            raise ValueError("Telefon raqam bo‘lishi shart")
-        if not full_name:
-            raise ValueError("To‘liq ism bo‘lishi shart")
-
-        extra_fields.setdefault("is_active", True)
-
-        user = self.model(phone=phone, full_name=full_name, **extra_fields)
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("Email majburiy")
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, phone, full_name, password=None, **extra_fields):
+    def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
-
-        if extra_fields.get("is_staff") is not True:
-            raise ValueError("Superuser uchun is_staff=True bo‘lishi kerak")
-        if extra_fields.get("is_superuser") is not True:
-            raise ValueError("Superuser uchun is_superuser=True bo‘lishi kerak")
-
-        return self.create_user(phone, full_name, password, **extra_fields)
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    full_name = models.CharField(max_length=255)
-    phone = models.CharField(max_length=15, unique=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    email = models.EmailField(unique=True)
+    full_name = models.CharField(max_length=255, blank=True, null=True)
+    is_active = models.BooleanField(default=False)  # Email tasdiqlanganda True bo'ladi
+    is_staff = models.BooleanField(default=False)
+    date_joined = models.DateTimeField(auto_now_add=True)
 
-    is_active = models.BooleanField(default=True)   # kerak
-    is_staff = models.BooleanField(default=False)   # admin panel uchun
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     objects = UserManager()
 
-    USERNAME_FIELD = "phone"
-    REQUIRED_FIELDS = ["full_name"]
-
     def __str__(self):
-        return f"{self.full_name} | {self.phone}"
+        return self.email
+
+
+
+class EmailVerification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_expired(self):
+        return timezone.now() > self.created_at + timedelta(minutes=10)
+
+    @staticmethod
+    def generate_code():
+        return str(random.randint(100000, 999999))

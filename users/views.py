@@ -1,63 +1,71 @@
-from django.contrib.auth import get_user_model
 from rest_framework import generics, status
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django.core.mail import send_mail
+from django.conf import settings
+from .serializers import RegisterSerializer, VerifyEmailSerializer
+from .models import EmailVerification, User
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import LoginSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import (
-    UserRegistrationSerializer,
-    UserLoginSerializer,
-    UserPasswordChangeSerializer,
-)
 
-User = get_user_model()
+class RegisterView(generics.CreateAPIView):
+    serializer_class = RegisterSerializer
 
-
-class UserRegistrationView(generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserRegistrationSerializer
-    permission_classes = [AllowAny]
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+    def perform_create(self, serializer):
         user = serializer.save()
-
-        refresh = RefreshToken.for_user(user)
-
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "user": self.get_serializer(user).data
-        }, status=status.HTTP_201_CREATED)
-
-
-class UserLoginView(generics.GenericAPIView):
-    serializer_class = UserLoginSerializer
-    permission_classes = [AllowAny]
-
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
-
-        refresh = RefreshToken.for_user(user)
-        # JWT token ichida custom claim qo‘shish (agar kerak bo‘lsa)
-        # refresh['phone'] = user.phone
-
-        return Response({
-            "refresh": str(refresh),
-            "access": str(refresh.access_token),
-            "user": UserRegistrationSerializer(user).data,
-        }, status=status.HTTP_200_OK)
+        # Email kod yuborish
+        verification = EmailVerification.objects.filter(user=user).latest("created_at")
+        send_mail(
+            subject="Tasdiqlash kodi",
+            message=f"Sizning tasdiqlash kodingiz: {verification.code}",
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[user.email],
+        )
 
 
-class UserPasswordChangeView(generics.GenericAPIView):
-    serializer_class = UserPasswordChangeSerializer
-    permission_classes = [IsAuthenticated]
+class VerifyEmailView(generics.GenericAPIView):
+    serializer_class = VerifyEmailSerializer
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+        return Response({"message": "Email muvaffaqiyatli tasdiqlandi"}, status=status.HTTP_200_OK)
+
+
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data["user"]
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response({
+            "refresh": str(refresh),
+            "access": str(refresh.access_token),
+            "user": {
+                "email": user.email,
+                "full_name": user.full_name
+            }
+        }, status=status.HTTP_200_OK)
+
+
+class LogoutView(APIView):
+    def post(self, request):
+        try:
+            refresh_token = request.data["refresh"]
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response({"detail": "Successfully logged out."}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            return Response({"detail": "Invalid token."}, status=status.HTTP_400_BAD_REQUEST)
