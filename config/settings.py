@@ -48,7 +48,8 @@ INSTALLED_APPS = [
     'drf_yasg',  # <-- qo‘shish shart
 
     # app
-    'users'
+    'users',
+    'product'
 ]
 
 
@@ -132,6 +133,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend'
+    ]
+
 }
 
 
