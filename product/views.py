@@ -40,7 +40,7 @@ def product_list_create(request):
         return Response(serializer.data)
 
     elif request.method == "POST":
-        serializer = ProductSerializer(data=request.data)
+        serializer = ProductSerializer(data=request.data, context={"request": request})
         if serializer.is_valid():
             serializer.save(user=request.user)  #  user avtomatik yoziladi
             return Response(serializer.data, status=status.HTTP_201_CREATED)
