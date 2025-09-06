@@ -1,5 +1,6 @@
 from django.urls import path
-from product.views import category_list, product_detail, product_list_create, category_detail
+from product.views import category_list, product_list_create, category_detail, product_detail_get, \
+    product_detail_update_delete
 
 urlpatterns = [
     path("categories/", category_list, name="category-list"),
@@ -7,5 +8,6 @@ urlpatterns = [
 
     # Product
     path("products/", product_list_create, name="product-list-create"),
-    path("products/<int:pk>/", product_detail, name="product-detail"),
+    path("products/<int:pk>/", product_detail_get, name="product-detail-get"),
+    path("products/<int:pk>/edit/and/delete/", product_detail_update_delete, name="product-detail-update-delete"),
 ]

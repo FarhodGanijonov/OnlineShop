@@ -24,11 +24,10 @@ def category_detail(request, pk):
     return Response(serializer.data)
 
 
-# -------- Product Views --------
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
 def product_list_create(request):
     if request.method == "GET":
+        # GET -> hamma ko‘rishi mumkin
         products = Product.objects.filter(is_active=True).order_by("-created_at")
 
         # filter: ?category=1
@@ -36,39 +35,48 @@ def product_list_create(request):
         if category_id:
             products = products.filter(category_id=category_id)
 
-        serializer = ProductSerializer(products, many=True)
+        serializer = ProductSerializer(products, many=True, context={"request": request})
         return Response(serializer.data)
 
     elif request.method == "POST":
-        serializer = ProductSerializer(data=request.data, context={"request": request})
+        # POST -> faqat authenticated foydalanuvchi
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save(user=request.user)  #  user avtomatik yoziladi
+            serializer.save(user=request.user)  # ✅ user avtomatik yoziladi
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(["GET", "PUT", "DELETE"])
-@permission_classes([IsAuthenticated])  # faqat owner o‘z productini update/delete qila oladi
-def product_detail(request, pk):
+@api_view(["GET"])
+@permission_classes([AllowAny])  # GET uchun hammaga ruxsat
+def product_detail_get(request, pk):
+    product = get_object_or_404(Product, pk=pk)
+    serializer = ProductSerializer(product, context={"request": request})
+    return Response(serializer.data)
+
+
+@api_view(["PUT", "DELETE"])
+@permission_classes([IsAuthenticated])  # faqat login bo‘lgan user
+def product_detail_update_delete(request, pk):
     product = get_object_or_404(Product, pk=pk)
 
-    if request.method == "GET":
-        serializer = ProductSerializer(product)
-        return Response(serializer.data)
+    if product.user != request.user:
+        return Response({"error": "Siz faqat o‘z mahsulotingizni o‘zgartira/ o‘chira olasiz"},
+                        status=status.HTTP_403_FORBIDDEN)
 
-    elif request.method == "PUT":
-        if product.user != request.user:
-            return Response({"error": "Siz faqat o‘z mahsulotingizni o‘zgartira olasiz"},
-                            status=status.HTTP_403_FORBIDDEN)
-        serializer = ProductSerializer(product, data=request.data, partial=True)
+    if request.method == "PUT":
+        serializer = ProductSerializer(product, data=request.data, partial=True, context={"request": request})
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     elif request.method == "DELETE":
-        if product.user != request.user:
-            return Response({"error": "Siz faqat o‘z mahsulotingizni o‘chira olasiz"},
-                            status=status.HTTP_403_FORBIDDEN)
         product.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
