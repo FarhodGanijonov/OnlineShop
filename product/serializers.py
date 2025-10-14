@@ -19,11 +19,12 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ["id", "title", "description", "price", "image", "location",
-                  "created_at", "updated_at", "is_active", "category", "category_id", "user",]
-        read_only_fields = ["id", "created_at", "updated_at"]
+                  "created_at", "updated_at", "is_active", "category", "category_id", "user", "status"]
+        read_only_fields = ["id", "created_at", "updated_at", "status"]
 
     def create(self, validated_data):
         request = self.context.get("request")
         if request and request.user.is_authenticated:
             validated_data["user"] = request.user
+            validated_data["status"] = "pending"
         return super().create(validated_data)

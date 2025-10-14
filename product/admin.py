@@ -11,7 +11,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "category", "price", "is_active", "created_at")
-    list_filter = ("is_active", "category")
-    search_fields = ("title", "description", "location")
-    ordering = ("-created_at",)
+    list_display = ("title", "user", "status", "is_active", "created_at")
+    list_filter = ("status", "is_active", "category")
+    search_fields = ("title", "description", "user__email")
+    list_editable = ("status", "is_active")  # Admin paneldan to‘g‘ridan-to‘g‘ri statusni o‘zgartirish
