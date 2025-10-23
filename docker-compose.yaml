@@ -6,45 +6,34 @@ services:
     env_file:
       - .env
     command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
-#    command: sh -c "python manage.py migrate && daphne -b 0.0.0.0 -p 8000 config.asgi:application"
     volumes:
-      - .:/Shop
+      - .:/Shop                     # bind mount: kodni live yangilash
       - static_volume:/Shop/staticfiles
       - media_volume:/Shop/mediafiles
     ports:
       - "8024:8000"
     depends_on:
       - shop_db
-#      - redis
     restart: always
 
   shop_db:
-      image: postgis/postgis:latest
-      environment:
-        POSTGRES_DB: shop
-        POSTGRES_USER: user_shop
-        POSTGRES_PASSWORD: password_shop
-      ports:
-        - "5433:5432"
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-      restart: always
-      healthcheck:
-        test: [ "CMD-SHELL", "pg_isready -U postgres_user -d ari_app" ]
-        interval: 10s
-        timeout: 5s
-        retries: 3
-
-#  redis:
-#    image: redis:alpine
-#    ports:
-#      - "6372:6379"
-#    volumes:
-#      - redis_data:/data
-#    restart: always
+    image: postgis/postgis:latest
+    environment:
+      POSTGRES_DB: shop
+      POSTGRES_USER: user_shop
+      POSTGRES_PASSWORD: password_shop
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user_shop -d shop"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres_data:
   static_volume:
   media_volume:
-#  redis_data:

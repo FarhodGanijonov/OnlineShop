@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import Category, Product
+from .models import Category, Product, ProductImage
+
+
+# Inline admin for images
+class ProductImageInline(admin.TabularInline):  # yoki admin.StackedInline
+    model = ProductImage
+    extra = 1  # yangi rasm qo‘shish uchun bo‘sh satr soni
 
 
 @admin.register(Category)
@@ -15,3 +21,5 @@ class ProductAdmin(admin.ModelAdmin):
     list_filter = ("status", "is_active", "category")
     search_fields = ("title", "description", "user__email")
     list_editable = ("status", "is_active")  # Admin paneldan to‘g‘ridan-to‘g‘ri statusni o‘zgartirish
+    inlines = [ProductImageInline]  # shu yerga inline qo‘shamiz
+

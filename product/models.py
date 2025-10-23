@@ -26,7 +26,8 @@ class Product(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
-    image = models.ImageField(upload_to="products/", blank=True, null=True)
+    icon = models.ImageField(upload_to="product_icon", blank=True, null=True)
+    emoji = models.ImageField(upload_to="product_emoji", blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)  # masalan: "Toshkent, Yunusobod"
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -36,3 +37,9 @@ class Product(models.Model):
     def __str__(self):
         return self.title
 
+class ProductImage(models.Model):
+    products = models.ForeignKey(Product, on_delete=models.CASCADE)
+    image = models.ImageField(upload_to="products_image/", blank=True, null=True)
+
+    def __str__(self):
+        return self.products.title
