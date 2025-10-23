@@ -3,7 +3,6 @@ from .models import Category, SubCategory, Product, ProductImage
 
 # Category serializer
 class CategorySerializer(serializers.ModelSerializer):
-    created_at = serializers.DateField(format="%Y-%m-%d", read_only=True)
 
     class Meta:
         model = Category
@@ -15,15 +14,12 @@ class SubCategorySerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True
     )
-    created_at = serializers.SerializerMethodField()
 
 
     class Meta:
         model = SubCategory
-        fields = ["id", "title", "description", "icon", "image", "category", "category_id", 'created_at']
+        fields = ["id", "title", "description", "icon", "image", "category", "category_id"]
 
-    def get_created_at(self, obj):
-        return obj.created_at.date()  # faqat YYYY-MM-DD
 
 
 # ProductImage serializer

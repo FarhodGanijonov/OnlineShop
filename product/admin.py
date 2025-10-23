@@ -16,7 +16,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(SubCategory)
 class SubCategoryAdmin(admin.ModelAdmin):
-    list_display = ("title", "category", "created_at")
+    list_display = ("title", "category")
     search_fields = ("title", "category__name")
     list_filter = ("category",)
 
