@@ -3,10 +3,30 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Category, Product
-from .serializers import CategorySerializer, ProductSerializer
+from .models import Category, Product, SubCategory
+from .serializers import CategorySerializer, ProductSerializer, SubCategorySerializer
 
+# category ga tegishli subkategory ni olish
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def subcategory_list(request):
+    category_id = request.GET.get("category")  # ?category=1
+    if not category_id:
+        return Response({"detail": "Category ID required"}, status=400)
 
+    subcategories = SubCategory.objects.filter(category_id=category_id).order_by("title")
+    serializer = SubCategorySerializer(subcategories, many=True, context={'request': request})
+    return Response(serializer.data)
+
+# subcategory ga tegishli product listini olish
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def products_by_subcategory(request, subcategory_id):
+    products = Product.objects.filter(subcategory_id=subcategory_id, status="approved", is_active=True)
+    serializer = ProductSerializer(products, many=True, context={"request": request})
+    return Response(serializer.data)
+
+# category list
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def category_list(request):
@@ -14,7 +34,7 @@ def category_list(request):
     serializer = CategorySerializer(categories, many=True, context={'request':request})
     return Response(serializer.data)
 
-
+# category detail
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def category_detail(request, pk):
@@ -22,7 +42,7 @@ def category_detail(request, pk):
     serializer = CategorySerializer(category, context={'request':request})
     return Response(serializer.data)
 
-
+# product post/get + filter
 @api_view(["GET", "POST"])
 def product_list_create(request):
     if request.method == "GET":
@@ -79,7 +99,7 @@ def product_list_create(request):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+# product detail
 @api_view(["GET"])
 @permission_classes([AllowAny])  # GET uchun hammaga ruxsat
 def product_detail_get(request, pk):
@@ -87,7 +107,7 @@ def product_detail_get(request, pk):
     serializer = ProductSerializer(product, context={"request": request})
     return Response(serializer.data)
 
-
+# product put/delete
 @api_view(["PUT", "DELETE"])
 @permission_classes([IsAuthenticated])  # faqat login bo‘lgan user
 def product_detail_update_delete(request, pk):
