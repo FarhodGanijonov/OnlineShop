@@ -11,7 +11,7 @@ from .serializers import CategorySerializer, ProductSerializer
 @permission_classes([AllowAny])
 def category_list(request):
     categories = Category.objects.all().order_by("-created_at")
-    serializer = CategorySerializer(categories, many=True)
+    serializer = CategorySerializer(categories, many=True, context={'request':request})
     return Response(serializer.data)
 
 
@@ -19,7 +19,7 @@ def category_list(request):
 @permission_classes([AllowAny])
 def category_detail(request, pk):
     category = get_object_or_404(Category, pk=pk)
-    serializer = CategorySerializer(category)
+    serializer = CategorySerializer(category, context={'request':request})
     return Response(serializer.data)
 
 
