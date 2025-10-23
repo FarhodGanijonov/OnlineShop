@@ -38,8 +38,8 @@ class Product(models.Model):
         return self.title
 
 class ProductImage(models.Model):
-    products = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")  # products -> product
     image = models.ImageField(upload_to="products_image/", blank=True, null=True)
 
     def __str__(self):
-        return self.products.title
+        return self.product.title

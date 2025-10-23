@@ -12,7 +12,6 @@ class ProductsImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = "__all__"
 
-
 class ProductSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -20,11 +19,10 @@ class ProductSerializer(serializers.ModelSerializer):
     )
     user = serializers.ReadOnlyField(source="user.email")
 
-    #  Nested serializer for images
-    images = ProductsImageSerializer(many=True, read_only=True)  # read-only, GET uchun
+    images = ProductsImageSerializer(many=True, read_only=True)  # GET uchun
     images_upload = serializers.ListField(
         child=serializers.ImageField(), write_only=True, required=False
-    )  # POST/PUT uchun rasm yuborish
+    )  # POST/PUT uchun
 
     class Meta:
         model = Product
@@ -44,8 +42,8 @@ class ProductSerializer(serializers.ModelSerializer):
 
         product = super().create(validated_data)
 
-        # 🔹 Save uploaded images
+        # Save uploaded images
         for img in images_data:
-            ProductImage.objects.create(product=product, image=img)
+            ProductImage.objects.create(product=product, image=img)  # product nomi to‘g‘ri
 
         return product
