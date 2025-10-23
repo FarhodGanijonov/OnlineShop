@@ -5,6 +5,8 @@ from django.conf import settings
 class Category(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True, null=True)
+    image = models.ImageField(upload_to="image_category/", blank=True, null=True)
+    icon = models.ImageField(upload_to="icon_category/", blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
