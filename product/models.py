@@ -21,7 +21,7 @@ class SubCategory(models.Model):
     description = models.TextField(blank=True, null=True)
     icon = models.ImageField(upload_to="subcategory_icon/", blank=True, null=True)
     image = models.ImageField(upload_to="subcategory_image/", blank=True, null=True)
-
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.category.name} → {self.title}"
