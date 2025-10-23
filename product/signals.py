@@ -8,7 +8,7 @@ from .models import Product
 @receiver(post_save, sender=Product)
 def notify_user_on_status_change(sender, instance, created, **kwargs):
     """
-    🔔 Product holati o'zgarganda foydalanuvchiga avtomatik email yuboradi.
+     Product holati o'zgarganda foydalanuvchiga avtomatik email yuboradi.
     """
     if created:
         # Yangi product yaratildi — hali tasdiqlanmagan
