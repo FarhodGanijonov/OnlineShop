@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, ProductImage
+from .models import Category, Product, ProductImage, SubCategory
 
 
 # Inline admin for images
@@ -13,6 +13,12 @@ class CategoryAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "created_at")
     search_fields = ("name",)
     ordering = ("-created_at",)
+
+@admin.register(SubCategory)
+class SubCategoryAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "created_at")
+    search_fields = ("title", "category__name")
+    list_filter = ("category",)
 
 
 @admin.register(Product)
