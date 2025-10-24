@@ -4,15 +4,11 @@ from .models import Category, SubCategory, Product, ProductImage
 
 #  CATEGORY
 class CategorySerializer(serializers.ModelSerializer):
-    created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = ['id', 'name', 'description', 'image', 'icon', 'created_at']
 
-    def get_created_at(self, obj):
-        # modelga tegmasdan string qaytaramiz
-        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
 
 
 #  SUBCATEGORY
@@ -21,7 +17,6 @@ class SubCategorySerializer(serializers.ModelSerializer):
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True
     )
-    created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = SubCategory
@@ -29,10 +24,6 @@ class SubCategorySerializer(serializers.ModelSerializer):
             "id", "title", "description", "icon", "image",
             "category", "category_id", "created_at"
         ]
-
-    def get_created_at(self, obj):
-        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
-
 
 #  PRODUCT IMAGE
 class ProductsImageSerializer(serializers.ModelSerializer):
@@ -43,9 +34,6 @@ class ProductsImageSerializer(serializers.ModelSerializer):
 
 #  PRODUCT
 class ProductSerializer(serializers.ModelSerializer):
-    created_at = serializers.SerializerMethodField()
-    updated_at = serializers.SerializerMethodField()
-
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True
@@ -71,13 +59,6 @@ class ProductSerializer(serializers.ModelSerializer):
             "subcategory_id", "user", "status", "images", "images_upload"
         ]
         read_only_fields = ["id", "created_at", "updated_at", "status", "images"]
-
-    #  datetime formatlash — faqat string qaytadi, xato chiqmaydi
-    def get_created_at(self, obj):
-        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
-
-    def get_updated_at(self, obj):
-        return obj.updated_at.strftime("%Y-%m-%d %H:%M:%S") if obj.updated_at else None
 
     # create metodi — product va rasmlarni yaratish
     def create(self, validated_data):
