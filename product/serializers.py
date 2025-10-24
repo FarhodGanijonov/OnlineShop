@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import Category, SubCategory, Product, ProductImage
 
 
-# ✅ Category serializer
+#  CATEGORY
 class CategorySerializer(serializers.ModelSerializer):
     created_at = serializers.SerializerMethodField()
 
@@ -11,11 +11,11 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'image', 'icon', 'created_at']
 
     def get_created_at(self, obj):
-        # datetime ni stringga aylantiramiz (timezone bilan muammo bo‘lmaydi)
-        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
+        # modelga tegmasdan string qaytaramiz
+        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
 
 
-# ✅ SubCategory serializer
+#  SUBCATEGORY
 class SubCategorySerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -31,20 +31,21 @@ class SubCategorySerializer(serializers.ModelSerializer):
         ]
 
     def get_created_at(self, obj):
-        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
+        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
 
 
-# ✅ ProductImage serializer
+#  PRODUCT IMAGE
 class ProductsImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = "__all__"
 
 
-# ✅ Product serializer
+#  PRODUCT
 class ProductSerializer(serializers.ModelSerializer):
     created_at = serializers.SerializerMethodField()
     updated_at = serializers.SerializerMethodField()
+
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True
@@ -53,6 +54,7 @@ class ProductSerializer(serializers.ModelSerializer):
     subcategory_id = serializers.PrimaryKeyRelatedField(
         queryset=SubCategory.objects.all(), source="subcategory", write_only=True
     )
+
     user = serializers.ReadOnlyField(source="user.email")
 
     images = ProductsImageSerializer(many=True, read_only=True)
@@ -63,19 +65,21 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "title", "description", "price", "icon", "emoji", "condition",
-            "location", "created_at", "updated_at", "is_active",
-            "category", "category_id", "subcategory", "subcategory_id",
-            "user", "status", "images", "images_upload"
+            "id", "title", "description", "price", "icon", "emoji",
+            "condition", "location", "created_at", "updated_at",
+            "is_active", "category", "category_id", "subcategory",
+            "subcategory_id", "user", "status", "images", "images_upload"
         ]
         read_only_fields = ["id", "created_at", "updated_at", "status", "images"]
 
+    #  datetime formatlash — faqat string qaytadi, xato chiqmaydi
     def get_created_at(self, obj):
-        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
+        return obj.created_at.strftime("%Y-%m-%d %H:%M:%S") if obj.created_at else None
 
     def get_updated_at(self, obj):
         return obj.updated_at.strftime("%Y-%m-%d %H:%M:%S") if obj.updated_at else None
 
+    # create metodi — product va rasmlarni yaratish
     def create(self, validated_data):
         request = self.context.get("request")
         images_data = validated_data.pop("images_upload", [])
@@ -85,7 +89,6 @@ class ProductSerializer(serializers.ModelSerializer):
 
         product = super().create(validated_data)
 
-        # Save uploaded images
         for img in images_data:
             ProductImage.objects.create(product=product, image=img)
 
