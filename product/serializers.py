@@ -1,15 +1,21 @@
 from rest_framework import serializers
 from .models import Category, SubCategory, Product, ProductImage
 
-# Category serializer
+
+# ✅ Category serializer
 class CategorySerializer(serializers.ModelSerializer):
-    created_at = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = Category
         fields = ['id', 'name', 'description', 'image', 'icon', 'created_at']
 
-# SubCategory serializer
+    def get_created_at(self, obj):
+        # datetime ni stringga aylantiramiz (timezone bilan muammo bo‘lmaydi)
+        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
+
+
+# ✅ SubCategory serializer
 class SubCategorySerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -17,34 +23,36 @@ class SubCategorySerializer(serializers.ModelSerializer):
     )
     created_at = serializers.SerializerMethodField()
 
-
     class Meta:
         model = SubCategory
-        fields = ["id", "title", "description", "icon", "image", "category", "category_id", 'created_at']
+        fields = [
+            "id", "title", "description", "icon", "image",
+            "category", "category_id", "created_at"
+        ]
 
     def get_created_at(self, obj):
-        return obj.created_at.date()  # faqat YYYY-MM-DD
+        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
 
 
-# ProductImage serializer
+# ✅ ProductImage serializer
 class ProductsImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
         fields = "__all__"
 
-# Product serializer
+
+# ✅ Product serializer
 class ProductSerializer(serializers.ModelSerializer):
-    created_at = serializers.DateField(format="%Y-%m-%d", read_only=True)
+    created_at = serializers.SerializerMethodField()
+    updated_at = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(), source="category", write_only=True
     )
-
     subcategory = SubCategorySerializer(read_only=True)
     subcategory_id = serializers.PrimaryKeyRelatedField(
         queryset=SubCategory.objects.all(), source="subcategory", write_only=True
     )
-
     user = serializers.ReadOnlyField(source="user.email")
 
     images = ProductsImageSerializer(many=True, read_only=True)
@@ -55,12 +63,18 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "title", "description", "price", "icon", "emoji", "condition", "location",
-            "created_at", "updated_at", "is_active", "category", "category_id",
-            "subcategory", "subcategory_id",
+            "id", "title", "description", "price", "icon", "emoji", "condition",
+            "location", "created_at", "updated_at", "is_active",
+            "category", "category_id", "subcategory", "subcategory_id",
             "user", "status", "images", "images_upload"
         ]
         read_only_fields = ["id", "created_at", "updated_at", "status", "images"]
+
+    def get_created_at(self, obj):
+        return obj.created_at.strftime("%Y-%m-%d") if obj.created_at else None
+
+    def get_updated_at(self, obj):
+        return obj.updated_at.strftime("%Y-%m-%d %H:%M:%S") if obj.updated_at else None
 
     def create(self, validated_data):
         request = self.context.get("request")
