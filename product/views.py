@@ -62,11 +62,17 @@ def product_list_create(request):
                 else:
                     return Response({"detail": "Authentication required."}, status=401)
 
+
             elif status_filter == "inactive":
                 if request.user.is_authenticated:
-                    products = products.filter(user=request.user, is_active=False)
+                    products = Product.objects.filter(
+                        user=request.user,
+                        is_active=False
+                    )
+                    return Response(ProductSerializer(products, many=True, context={"request": request}).data)
                 else:
                     return Response({"detail": "Authentication required."}, status=401)
+
         else:
             # Default holatda approved + active ko‘rsatiladi
             products = products.filter(status="approved", is_active=True)
