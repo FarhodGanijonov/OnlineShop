@@ -56,22 +56,26 @@ def product_list_create(request):
             if status_filter == "approved":
                 products = products.filter(status="approved", is_active=True)
 
-            elif status_filter in ["pending", "rejected"]:
+            elif status_filter in ["pending", "rejected", "inactive"]:
                 if request.user.is_authenticated:
-                    products = products.filter(user=request.user, status=status_filter)
+                    if status_filter == "inactive":
+                        products = products.filter(user=request.user, is_active=False)
+                    else:
+                        products = products.filter(user=request.user, status=status_filter)
                 else:
                     return Response({"detail": "Authentication required."}, status=401)
 
 
-            elif status_filter == "inactive":
-                if request.user.is_authenticated:
-                    products = Product.objects.filter(
-                        user=request.user,
-                        is_active=False
-                    )
-                    return Response(ProductSerializer(products, many=True, context={"request": request}).data)
-                else:
-                    return Response({"detail": "Authentication required."}, status=401)
+
+        # elif status_filter == "inactive":
+        #         if request.user.is_authenticated:
+        #             products = Product.objects.filter(
+        #                 user=request.user,
+        #                 is_active=False
+        #             )
+        #             return Response(ProductSerializer(products, many=True, context={"request": request}).data)
+        #         else:
+        #             return Response({"detail": "Authentication required."}, status=401)
 
         else:
             # Default holatda approved + active ko‘rsatiladi
