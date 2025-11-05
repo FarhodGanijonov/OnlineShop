@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, SubCategory, Product, ProductImage, BuyRequest, BuyRequestImage
+from .models import Category, SubCategory, Product, ProductImage, BuyRequest, BuyRequestImage, Currency
 
 
 #  CATEGORY
@@ -75,6 +75,10 @@ class ProductSerializer(serializers.ModelSerializer):
 
         return product
 
+class CurrencySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Currency
+        fields = ["id", "code", "name"]
 
 
 class BuyRequestImageSerializer(serializers.ModelSerializer):
@@ -100,10 +104,17 @@ class BuyRequestSerializer(serializers.ModelSerializer):
         child=serializers.ImageField(), write_only=True, required=False
     )
 
+    currency = CurrencySerializer(read_only=True)
+    currency_id = serializers.PrimaryKeyRelatedField(
+        queryset=Currency.objects.all(), source="currency", write_only=True
+    )
+
+
+
     class Meta:
         model = BuyRequest
         fields = [
-            "id", "title", "description", "desired_price", 'currency', "condition",
+            "id", "title", "description", "desired_price", "currency", "currency_id", "condition",
             "category", "category_id", "subcategory", "subcategory_id",
             "location", 'phone_number', "status", "is_active", "user",
             "created_at", "updated_at",

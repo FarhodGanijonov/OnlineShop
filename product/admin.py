@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Category, Product, ProductImage, SubCategory, BuyRequestImage, BuyRequest
+from .models import Category, Product, ProductImage, SubCategory, BuyRequestImage, BuyRequest, Currency
 
 
 # Inline admin for images
@@ -43,6 +43,12 @@ class BuyRequestImageInline(admin.TabularInline):
         return "(No image)"
     image_preview.allow_tags = True
     image_preview.short_description = "Preview"
+
+# Currency admin
+@admin.register(Currency)
+class CurrencyAdmin(admin.ModelAdmin):
+    list_display = ("id", "code", "name")
+    search_fields = ("code", "name")
 
 
 @admin.register(BuyRequest)

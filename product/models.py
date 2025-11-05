@@ -70,6 +70,12 @@ class ProductImage(models.Model):
     def __str__(self):
         return self.product.title
 
+class Currency(models.Model):
+    code = models.CharField(max_length=3, unique=True)  # USD, UZS, EUR
+    name = models.CharField(max_length=50)  # Dollar, So'm, Euro
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
 
 
 
@@ -86,12 +92,6 @@ class BuyRequest(models.Model):
         ("used", "Used"),
         ("any", "Any"),
     ]
-
-    CURRENCY_CHOICES = [
-        ("UZS", "So'm"),
-        ("USD", "Dollar"),
-    ]
-
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="buy_requests"
@@ -112,7 +112,7 @@ class BuyRequest(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     desired_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default="UZS")
+    currency = models.ForeignKey(Currency, on_delete=models.SET_NULL, null=True)
     condition = models.CharField(max_length=10, choices=CONDITION_CHOICES, default="any")
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name="buy_requests")
     subcategory = models.ForeignKey(SubCategory, on_delete=models.SET_NULL, null=True, related_name="buy_requests")
