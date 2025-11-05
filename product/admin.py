@@ -58,7 +58,7 @@ class BuyRequestAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ("Asosiy ma'lumotlar", {
-            "fields": ("user", "title", "description", "desired_price", "condition", "is_active")
+            "fields": ("user", "title", "description", "desired_price", 'currency', 'phone_number', "condition", "is_active")
         }),
         ("Kategoriyalar", {
             "fields": ("category", "subcategory")

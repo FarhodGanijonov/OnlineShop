@@ -103,9 +103,9 @@ class BuyRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = BuyRequest
         fields = [
-            "id", "title", "description", "desired_price", "condition",
+            "id", "title", "description", "desired_price", 'currency', "condition",
             "category", "category_id", "subcategory", "subcategory_id",
-            "location", "status", "is_active", "user",
+            "location", 'phone_number', "status", "is_active", "user",
             "created_at", "updated_at",
             "images", "images_upload"
         ]
