@@ -15,6 +15,9 @@ urlpatterns = [
     path('products/<int:pk>/', views.product_detail_get, name='product-detail'),    # Product detail
     path('products/<int:pk>/edit/', views.product_detail_update_delete, name='product-update-delete'), # PUT/DELETE
 
+    # buy request joylash va korish
+    path("buy-requests/", views.buy_request_list_create, name="buy-request-list-create"),
+
     # Products by SubCategory
     path('subcategories/<int:subcategory_id>/products/', views.products_by_subcategory, name='products-by-subcategory'),
     path("products/<int:pk>/toggle_active/", views.toggle_product_active, name="toggle_product_active"),

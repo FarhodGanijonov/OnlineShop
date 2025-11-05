@@ -3,8 +3,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
-from .models import Category, Product, SubCategory
-from .serializers import CategorySerializer, ProductSerializer, SubCategorySerializer
+from .models import Category, Product, SubCategory, BuyRequest
+from .serializers import CategorySerializer, ProductSerializer, SubCategorySerializer, BuyRequestSerializer
+
 
 # category ga tegishli subkategory ni olish
 @api_view(["GET"])
@@ -64,18 +65,6 @@ def product_list_create(request):
                         products = products.filter(user=request.user, status=status_filter)
                 else:
                     return Response({"detail": "Authentication required."}, status=401)
-
-
-
-        # elif status_filter == "inactive":
-        #         if request.user.is_authenticated:
-        #             products = Product.objects.filter(
-        #                 user=request.user,
-        #                 is_active=False
-        #             )
-        #             return Response(ProductSerializer(products, many=True, context={"request": request}).data)
-        #         else:
-        #             return Response({"detail": "Authentication required."}, status=401)
 
         else:
             # Default holatda approved + active ko‘rsatiladi
@@ -157,3 +146,49 @@ def toggle_product_active(request, pk):
         "message": status_msg,
         "product": ProductSerializer(product, context={"request": request}).data
     })
+
+
+@api_view(["GET", "POST"])
+def buy_request_list_create(request):
+    if request.method == "GET":
+        status_filter = request.GET.get("status")
+        user_only = request.GET.get("my")
+
+        buy_requests = BuyRequest.objects.all().order_by("-created_at")
+
+        if request.user.is_authenticated:
+            # Agar user umumiy ko‘rish qilsa (admin bo‘lmasa)
+            if not request.user.is_staff:  # normal user
+                # Foydalanuvchi faqat approved va active buy requestlarni ko‘radi
+                buy_requests = buy_requests.filter(status="approved", is_active=True)
+            else:
+                # Admin yoki staff hamma statuslarni ko‘rishi mumkin
+                if status_filter:
+                    if status_filter in ["pending", "approved", "rejected", "fulfilled", "inactive"]:
+                        if status_filter == "inactive":
+                            buy_requests = buy_requests.filter(user=request.user, is_active=False)
+                        else:
+                            buy_requests = buy_requests.filter(user=request.user, status=status_filter)
+        else:
+            # Auth bo‘lmagan user ham approved va active buy requestlarni ko‘radi
+            buy_requests = buy_requests.filter(status="approved", is_active=True)
+
+        # Foydalanuvchining o‘z requestlari
+        if user_only == "true" and request.user.is_authenticated:
+            buy_requests = buy_requests.filter(user=request.user)
+
+        serializer = BuyRequestSerializer(buy_requests, many=True, context={"request": request})
+        return Response(serializer.data)
+
+    elif request.method == "POST":
+        if not request.user.is_authenticated:
+            return Response({"detail": "Authentication required."}, status=401)
+
+        serializer = BuyRequestSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            buy_request = serializer.save()
+            return Response({
+                "message": "Buy request created successfully!",
+                "buy_request": BuyRequestSerializer(buy_request, context={"request": request}).data
+            }, status=201)
+        return Response(serializer.errors, status=400)

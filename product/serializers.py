@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Category, SubCategory, Product, ProductImage
+from .models import Category, SubCategory, Product, ProductImage, BuyRequest, BuyRequestImage
 
 
 #  CATEGORY
@@ -74,3 +74,55 @@ class ProductSerializer(serializers.ModelSerializer):
             ProductImage.objects.create(product=product, image=img)
 
         return product
+
+
+
+class BuyRequestImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BuyRequestImage
+        fields = ["id", "image"]
+
+
+class BuyRequestSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source="user.email")
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(), source="category", write_only=True
+    )
+    subcategory_id = serializers.PrimaryKeyRelatedField(
+        queryset=SubCategory.objects.all(), source="subcategory", write_only=True
+    )
+    category = CategorySerializer(read_only=True)
+    subcategory = SubCategorySerializer(read_only=True)
+
+    # Images
+    images = BuyRequestImageSerializer(many=True, read_only=True, source="BuyRequest_images")
+    images_upload = serializers.ListField(
+        child=serializers.ImageField(), write_only=True, required=False
+    )
+
+    class Meta:
+        model = BuyRequest
+        fields = [
+            "id", "title", "description", "desired_price", "condition",
+            "category", "category_id", "subcategory", "subcategory_id",
+            "location", "status", "is_active", "user",
+            "created_at", "updated_at",
+            "images", "images_upload"
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "status", "user", "images"]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        images_data = validated_data.pop("images_upload", [])
+
+        if request and request.user.is_authenticated:
+            validated_data["user"] = request.user
+            validated_data["status"] = "pending"
+
+        buy_request = super().create(validated_data)
+
+        # Rasm ma'lumotlarini yaratish
+        for img in images_data:
+            BuyRequestImage.objects.create(request=buy_request, image=img)
+
+        return buy_request
